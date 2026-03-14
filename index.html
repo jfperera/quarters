@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>25×25 Categories</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #F2FAF2;
+  --panel-bg:    #E4F4E4;
+  --border:      #7DBF7D;
+  --tile-bg:     #FFFFFF;
+  --tile-border: #B6DDB6;
+  --tile-hover:  #EDFAED;
+  --tile-sel-bg: #D6F5D6;
+  --tile-sel-br: #3DAA3D;
+  --text:        #1A3320;
+  --muted:       #6A9A72;
+  --corner-bg:   #2D6E3E;
+  --corner-text: #F0FAF0;
+  --corner-w:    148px;
+  --top-h:       56px;
+  --bar-gap:     4px;
+}
+
+[data-theme="dark"] {
+  --bg:          #111A13;
+  --panel-bg:    #172019;
+  --border:      #2E5C38;
+  --tile-bg:     #1C2E1F;
+  --tile-border: #2E5438;
+  --tile-hover:  #243328;
+  --tile-sel-bg: #1E3D26;
+  --tile-sel-br: #52C46A;
+  --text:        #C8EDD0;
+  --muted:       #5A8A64;
+  --corner-bg:   #0E1A10;
+  --corner-text: #C8EDD0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: 'Nunito', sans-serif;
+  color: var(--text);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── TOP SECTION ──────────────────────────────────── */
+#top-section {
+  display: flex;
+  flex-direction: row;
+  height: var(--top-h);
+  flex-shrink: 0;
+  border-bottom: 2px solid var(--border);
+  background: var(--panel-bg);
+}
+
+#corner {
+  width: var(--corner-w);
+  min-width: var(--corner-w);
+  background: var(--corner-bg);
+  color: var(--corner-text);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  flex-shrink: 0;
+}
+
+.score-row {
+  display: flex;
+  gap: 14px;
+}
+.score-group {
+  text-align: center;
+}
+.score-label {
+  font-size: 9px;
+  opacity: 0.55;
+  font-family: 'Nunito', sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.score-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  line-height: 1;
+}
+
+#deselect-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--corner-text);
+  border-radius: 5px;
+  padding: 2px 10px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: background 0.15s;
+}
+#shuffle-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--corner-text);
+  border-radius: 5px;
+  padding: 2px 10px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: background 0.15s;
+}
+#shuffle-btn:hover { background: rgba(255,255,255,0.2); }
+
+#top-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 5px 6px;
+  gap: var(--bar-gap);
+  overflow: hidden;
+}
+
+/* ── MAIN SECTION ─────────────────────────────────── */
+#main-section {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+}
+
+#left-bar {
+  width: var(--corner-w);
+  min-width: var(--corner-w);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 5px 6px;
+  gap: var(--bar-gap);
+  overflow-y: auto;
+  background: var(--panel-bg);
+  border-right: 2px solid var(--border);
+}
+
+#grid-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+}
+
+#main-grid {
+  display: grid;
+  grid-template-columns: repeat(25, 82px);
+  grid-template-rows: repeat(25, 40px);
+  gap: 3px;
+}
+
+/* ── SLOTS ────────────────────────────────────────── */
+.grid-cell {
+  width: 82px;
+  height: 40px;
+  position: relative;
+}
+
+.bar-slot {
+  flex-shrink: 0;
+  height: 40px;
+  border: 2px dashed #D9BE88;
+  border-radius: 7px;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+  background: rgba(255,255,255,0.35);
+}
+
+#top-bar .bar-slot {
+  flex: 1;
+  min-width: 50px;
+}
+#left-bar .bar-slot {
+  width: 100%;
+}
+
+.bar-slot.drag-over-empty {
+  border-color: var(--tile-sel-br);
+  background: var(--tile-sel-bg);
+}
+
+/* ── TILES ────────────────────────────────────────── */
+.tile {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--tile-border);
+  border-radius: 6px;
+  background: var(--tile-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 2px 5px;
+  line-height: 1.25;
+  overflow: hidden;
+  transition: background 0.1s, border-color 0.1s, box-shadow 0.1s, transform 0.1s;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(45,27,14,0.07);
+}
+
+.tile:hover:not(.complete):not(.dragging-source) {
+  background: var(--tile-hover);
+  border-color: #C0A868;
+  box-shadow: 0 2px 6px rgba(45,27,14,0.13);
+  transform: translateY(-1px);
+  z-index: 2;
+}
+
+.tile.selected {
+  background: var(--tile-sel-bg);
+  border-color: var(--tile-sel-br);
+  box-shadow: 0 0 0 2px var(--tile-sel-br), 0 2px 8px rgba(45,27,14,0.15);
+  transform: translateY(-1px);
+  z-index: 3;
+}
+
+.tile.complete {
+  font-size: 9px;
+  font-weight: 800;
+  cursor: default;
+  border-width: 1.5px;
+  box-shadow: 0 1px 4px rgba(45,27,14,0.18);
+}
+
+.tile.dragging-source {
+  opacity: 0.3;
+  transform: none;
+}
+
+.tile.drag-over-tile {
+  border-color: var(--tile-sel-br);
+  background: var(--tile-sel-bg);
+  box-shadow: 0 0 0 2.5px var(--tile-sel-br);
+  transform: scale(1.04);
+  z-index: 5;
+}
+
+@keyframes shake {
+  0%   { transform: translateX(0) rotate(0deg); }
+  15%  { transform: translateX(-5px) rotate(-1.5deg); }
+  35%  { transform: translateX(5px) rotate(1.5deg); }
+  55%  { transform: translateX(-4px) rotate(-1deg); }
+  75%  { transform: translateX(3px) rotate(0.5deg); }
+  90%  { transform: translateX(-1px) rotate(0deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+.tile.shake {
+  animation: shake 0.42s ease forwards;
+  border-color: #C0392B !important;
+  background: #FFF5F5 !important;
+}
+
+/* cluster count badge */
+.cluster-count {
+  color: #2266CC;
+  font-weight: 800;
+}
+
+[data-theme="dark"] .cluster-count {
+  color: #6AACFF;
+}
+
+/* ── RENAME INPUT ─────────────────────────────────── */
+.rename-input {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: var(--tile-sel-bg);
+  color: var(--text);
+  outline: 2.5px solid var(--tile-sel-br);
+  border-radius: 5px;
+  text-align: center;
+  font-family: 'Nunito', sans-serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 4px;
+  z-index: 20;
+  cursor: text;
+}
+
+/* ── FIREWORKS ────────────────────────────────────── */
+#fireworks {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 99999;
+  display: none;
+}
+
+/* ── SCROLLBAR ────────────────────────────────────── */
+#grid-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+#grid-scroll::-webkit-scrollbar-track { background: var(--bg); }
+#grid-scroll::-webkit-scrollbar-thumb { background: #88C488; border-radius: 4px; }
+#left-bar::-webkit-scrollbar { width: 4px; }
+#left-bar::-webkit-scrollbar-thumb { background: #88C488; border-radius: 2px; }
+
+/* ── HINT TEXT ────────────────────────────────────── */
+.bar-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--muted);
+  font-style: italic;
+  pointer-events: none;
+  letter-spacing: 0.03em;
+}
+
+/* ── DARK MODE TOGGLE ─────────────────────────────── */
+#darkmode-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--corner-text);
+  border-radius: 5px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: background 0.15s;
+}
+#darkmode-btn:hover { background: rgba(255,255,255,0.22); }
+
+/* smooth theme transitions */
+body, #app, #corner, #top-section, #left-bar, #top-bar, .tile, .bar-slot, .grid-cell {
+  transition: background-color 0.28s ease, border-color 0.28s ease, color 0.28s ease;
+}
+</style>
+</head>
+<body>
+<canvas id="fireworks"></canvas>
+
+<div id="app">
+  <div id="top-section">
+    <div id="corner">
+      <div class="score-row">
+        <div class="score-group">
+          <div class="score-label">Score</div>
+          <div class="score-value" id="score-val">0</div>
+        </div>
+        <div class="score-group">
+          <div class="score-label">Oops</div>
+          <div class="score-value" id="mistakes-val">0</div>
+        </div>
+      </div>
+      <div class="score-row">
+        <button id="shuffle-btn"  onclick="shuffleGrid()">Shuffle</button>
+        <button id="darkmode-btn" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
+      </div>
+    </div>
+    <div id="top-bar"></div>
+  </div>
+  <div id="main-section">
+    <div id="left-bar"></div>
+    <div id="grid-scroll">
+      <div id="main-grid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════
+// CATEGORIES  (25 categories × 25 words = 625 tiles)
+// ═══════════════════════════════════════════════════
+const cats = {};
+
+cats["Kinds of Soup"] = ["Chicken Noodle","Tomato","Italian Wedding","Minestrone","Split Pea","French Onion","Tuscan White Bean","Black Bean","Beef and Barley","Borscht","Hot and Sour","Egg Drop","Lentil","Gumbo","Matzo Ball","Sundubu-jjigae","Pasta e Fagioli","Lobster Bisque","Miso","Avgolemono","Potato Leek","Mulligatawny","Pozole","Tom Yum","Chicken and Wild Rice"];
+cats["Fonts"] = ["Helvetica","Arial","Times New Roman","Garamond","Calibri","Cambria","Futura","Gotham","Baskerville","Georgia","Avenir","Montserrat","Frutiger","Minion","Gill Sans","Myriad Pro","Aptos","Comic Sans","Impact","Courier","Wingdings","Verdana","Papyrus","Rockwell","Consolas"];
+cats["House Plants"] = ["Monstera","Fiddle Leaf Fig","ZZ Plant","Snake Plant","Pothos","Hosta","Inchplant","Christmas Cactus","Bird of Paradise","Jade Plant","Air Plant","Rubber Plant","Philodendron","Prayer Plant","Bird's Nest Fern","Parlor Palm","Money Tree","Lucky Bamboo","Chinese Evergreen","Orchid","Spider Plant","Aloe","Burro's Tail","Arrowhead Vine","Cane Plant"];
+cats["Apples"] = ["Red Delicious","Granny Smith","Honeycrisp","Gala","Cosmic Crisp","Fuji","Golden Delicious","Ambrosia","Braeburn","Cameo","Dazzle","Jazz","Juici","Sugarbee","Pink Lady","McIntosh","Melba","Jonagold","Summer Rambo","Crimson Delight","Grimes Golden","Stayman","Autumn Glory","Cortland","Ginger Gold"];
+cats["Cartoon Cats"] = ["Garfield","Heathcliff","Snowball II","Snagglepuss","Catbert","Sylvester","Hobbes","Tom","Stimpy","Doraemon","Eek","Felix","Nermal","Princess Carolyn","Salem","Scratchy","Top Cat","Oliver","Puss in Boots","MC Skat Kat","Humbert von Gikkingen","Orion","Jiji","Cheshire Cat","Duchess"];
+cats["Ham in Different Languages"] = ["Ham","Jamón","Jambon","Prosciutto","Presunto","Schinken","Vetchina","Hamu","Haem","Huǒtuǐ","Lahm khanzir","Szynka","Skinke","Skinka","Kinkku","Zambon","Giăm bông","Ŝinko","Šunka","Shynka","Sonka","Liamhás","Hamon","Šķiņķis","Kumpis"];
+cats["Patterns"] = ["Check","Gingham","Madras","Tartan","Polka Dot","Paisley","Leopard","Flannel","Zebra","Houndstooth","Pinstripes","Basketweave","Quatrefoil","Damask","Herringbone","Lace","Brocade","Jacquard","Trellis","Chevron","Harlequin","Honeycomb","Ogee","Windowpane","Batik"];
+cats["Cosmetic Enhancements"] = ["Botox","Lip Filler","Brazilian Butt Lift","Chemical Peel","Microdermabrasion","Dermaplaning","Microneedling","Oxygen Facial","LED Light Therapy","Brazilian Wax","Sugaring","Threading","Lash Lift","Brow Lamination","Face Lift","Breast Augmentation","Blepharoplasty","Arm Lift","Bra Roll Excision","Brow Lift","Rhinoplasty","Ear Pinning","Hair Transplant","Eye Alignment","Facial Fat Grafting"];
+cats["Spices"] = ["Turmeric","Oregano","Parsley","Garam Masala","Berbere","Ras el Hanout","Cumin","Paprika","Gochugaru","Thyme","Basil","Cilantro","Rosemary","Achiote","Fennel Seed","Dill","Chives","Coriander","Szechuan Pepper","Saffron","Star Anise","Cardamom","Clove","Ginger","Fenugreek"];
+cats["NPR Hosts"] = ["Melba Lara","Araceli Gomez-Aldana","Will Shortz","Peter Sagal","Steve Inskeep","Ira Glass","Terry Gross","Kai Ryssdal","Ayesha Rascoe","Ayana Contreras","Garrison Keillor","Monica Eng","Tamara Keith","Mary Louise Kelly","Mary Dixon","Gene Demby","Nina Totenberg","Ari Shapiro","Guy Raz","Scott Detrow","Scott Simon","Robert Siegel","Aisha Harris","Linda Holmes","Sam Sanders"];
+cats["Hairstyles"] = ["Crew Cut","Caesar Cut","Wolf Cut","Baby Bangs","Topsy Tail","Mullet","Lob","Bob","Pixie","Middle Part","Balayage","Frosted Tips","Pompadour","Mohawk","Box Braids","Afro","Jheri Curl","Fade","Perm","Bald","Combover","Twists","The Rachel","High and Tight","Dreadlocks"];
+cats["Painters"] = ["Mark Rothko","Frida Kahlo","Georgia O'Keeffe","Vincent van Gogh","Claude Monet","Édouard Manet","Pablo Picasso","Leonardo da Vinci","Roy Lichtenstein","Willem de Kooning","Diego Rivera","El Greco","Hieronymus Bosch","Diego Velázquez","Pieter Bruegel the Elder","Edward Hopper","Grant Wood","Georges Seurat","Andrew Wyeth","Thomas Cole","Wifredo Lam","René Magritte","Salvador Dalí","Rufino Tamayo","James Ensor"];
+cats["Wines"] = ["Pinot Noir","Merlot","Pinot Grigio","Grüner Veltliner","Sancerre","Gavi","Txakolina","Malbec","Riesling","Chardonnay","Vinho Verde","Barolo","Lambrusco","Prosecco","Vouvray","Syrah","Cava","Sauvignon Blanc","Grenache","Cabernet Franc","Chianti","Cabernet Sauvignon","Moscato","Sangiovese","Zinfandel"];
+cats["Candy Bars"] = ["Kit Kat","3 Musketeers","100 Grand","Twix","Snickers","Milky Way","Charleston Chew","Hershey","Baby Ruth","Payday","Mounds","Almond Joy","Take Five","Aero","Heath","Mars","Toblerone","Bueno","Tony's","Mr. Goodbar","Zero","Krackel","Crunch","Whatchamacallit","Butterfinger"];
+cats["Famous Female Leaders"] = ["Cleopatra","Hatshepsut","Nefertiti","Wu Zetian","Empress Suiko","Queen Seondeok","Empress Cixi","Eleanor of Aquitaine","Isabella I","Catherine de Medici","Elizabeth I","Queen Victoria","Maria Theresa","Catherine the Great","Marie Antoinette","Christina of Sweden","Anne of Great Britain","Wilhelmina","Margrethe II","Rania al-Abdullah","Boudicca","Nzinga","Jacinda Ardern","Margaret Thatcher","Claudia Sheinbaum Pardo"];
+cats["RomComs"] = ["When Harry Met Sally","Sleepless in Seattle","You've Got Mail","Miss Congeniality","The Proposal","Anyone But You","Love Actually","Hot Frosty","While You Were Sleeping","How to Lose a Guy in 10 Days","Never Been Kissed","10 Things I Hate About You","She's All That","50 First Dates","Notting Hill","Runaway Bride","My Best Friend's Wedding","Pretty Woman","The Holiday","Hitch","The Wedding Planner","Maid in Manhattan","Leap Year","Music and Lyrics","13 Going on 30"];
+cats["Leading Men"] = ["Matthew McConaughey","Tom Cruise","Glen Powell","Hugh Jackman","Hugh Grant","Ethan Hawke","Cary Grant","Jimmy Stewart","Humphrey Bogart","Sean Connery","Marlon Brando","Tom Hanks","Robert De Niro","Al Pacino","Harrison Ford","Paul Newman","Denzel Washington","Will Smith","Javier Bardem","Antonio Banderas","Pedro Pascal","Robert Redford","Fred Astaire","James Dean","Gene Kelly"];
+cats["Keanu Reeves Movies"] = ["The Matrix","John Wick","Sonic 3","The Devil's Advocate","The Matrix Resurrections","My Own Private Idaho","Point Break","The Matrix Revolutions","The Matrix Reloaded","Speed","Constantine","Bill & Ted's Excellent Adventure","Good Fortune","A Scanner Darkly","Something's Gotta Give","The Lake House","Bill & Ted's Bogus Journey","Johnny Mnemonic","The Day the Earth Stood Still","Keanu","Sweet November","Destination Wedding","Hardball","The Replacements","Chain Reaction"];
+cats["Makeup Brands"] = ["NARS","Stila","MAC","Lancôme","NYX","E.L.F.","Bobbi Brown","Laura Mercier","Urban Decay","Maybelline","CoverGirl","bareMinerals","Clinique","Glossier","Estée Lauder","Fenty Beauty","Wet n Wild","Kylie Cosmetics","Shiseido","Benefit","Tarte","Dior","Chanel","Tom Ford","YSL"];
+cats["National Parks"] = ["Acadia","Arches","Badlands","Big Bend","Biscayne","Bryce Canyon","Canyonlands","Carlsbad Caverns","Crater Lake","Death Valley","Denali","Everglades","Grand Canyon","Grand Teton","Great Basin","Great Sand Dunes","Great Smoky Mountains","Guadalupe Mountains","Haleakalā","Isle Royale","Kenai Fjords","Joshua Tree","Yellowstone","Yosemite","Zion"];
+cats["Coffee Drinks"] = ["Drip","Pourover","Americano","Espresso","Latte","Cortado","French Press","Ristretto","Lungo","Macchiato","Flat White","Cappuccino","Mocha","Café au Lait","Breve","Galão","Cold Brew","Frappuccino","Affogato","Red Eye","Café con Leche","Matcha Latte","Golden Milk","Long Black","Aeropress"];
+cats["Kinds of Chips"] = ["Jalapeño","Sour Cream and Onion","BBQ","Salt and Vinegar","Flamin' Hot","Shrimp Chips","Cool Ranch","Nacho Cheesier","Pirate's Booty","Funyuns","Hot Fries","Bugles","Chex Mix","Tostitos","Pringles","Krunchers","Utz Cape Cod","Zapp's","Sun Chips","Takis","Wise","Ruffles","Hippeas","Smartpop","Fritos"];
+cats["Famous Bears"] = ["Smokey","Winnie the Pooh","Paddington","Snuggles","Yogi","Boo Boo","Coca-Cola Bear","Kung Fu Panda","Corduroy","Baloo","Teddy Ruxpin","Fozzie Bear","Berenstain Bears","Iorek Byrnison","Su Lin","Little Bear","Lots-o'-Huggin' Bear","Kenai","Ted","Freddy Fazbear","Banjo","Kuma","Little John","Cocaine Bear","Rupert Bear"];
+cats["Sushi"] = ["Uni","Toro","Sake","Tamago","Ebi","Unagi","Spider","Philadelphia","California","Shrimp Tempura","Rainbow","Godzilla","Dragon","Spicy Tuna","Tornado","Boston","Alaska","Ikura","Cucumber","Umeboshi","Tako","Caterpillar","Oshinko","Maguro","Tobiko"];
+cats["Yoga Poses"] = ["Child's Pose","Downward Dog","Warrior I","Warrior II","Warrior III","Tree Pose","Mountain Pose","Cobra","Upward Dog","Cat-Cow","Chair Pose","Triangle Pose","Pigeon Pose","Boat Pose","Bridge Pose","Camel Pose","Crow Pose","Corpse Pose","Happy Baby","Lotus Pose","Half Moon","Plank","Seated Forward Fold","Shoulder Stand","Sphinx"];
+
+// ═══════════════════════════════════════════════════
+// CONSTANTS & STATE
+// ═══════════════════════════════════════════════════
+const GRID_SIZE  = 25;
+const TOP_SLOTS  = 13;
+const LEFT_SLOTS = 12;
+const WIN_SCORE  = 600;  // 25 cats × 24 merges each
+const LS         = 'cat25_';
+
+let score        = 0;
+let mistakes     = 0;
+let selectedTile = null;
+let draggingTile = null;
+
+// ═══════════════════════════════════════════════════
+// WORDLIST
+// ═══════════════════════════════════════════════════
+const wordlist = [];
+for (const [cat, words] of Object.entries(cats)) {
+  words.slice(0, 25).forEach(w => wordlist.push({ word: w, category: cat }));
+}
+
+// ═══════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════
+function catColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  const hue = Math.abs(h) % 360;
+  const l = 0.84, a = 0.28;
+  const f = n => {
+    const k = (n + hue / 30) % 12;
+    const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * c).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function deselectAll() {
+  if (selectedTile) {
+    selectedTile.classList.remove('selected');
+    selectedTile = null;
+  }
+}
+
+function toggleDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next   = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  document.getElementById('darkmode-btn').textContent = next === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem(LS + 'theme', next);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(LS + 'theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('darkmode-btn').textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+
+function shuffleGrid() {
+  deselectAll();
+  // Collect all tiles currently in grid cells (not bar slots)
+  const cells = [...document.querySelectorAll('.grid-cell')];
+  const tiles  = cells
+    .map(c => c.querySelector('.tile'))
+    .filter(Boolean);
+
+  // Remove them all from the DOM
+  tiles.forEach(t => t.remove());
+
+  // Shuffle the tile array
+  for (let i = tiles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+  }
+
+  // Re-place: pack into cells from the top-left, skipping none
+  let ti = 0;
+  for (const cell of cells) {
+    if (ti >= tiles.length) break;
+    cell.appendChild(tiles[ti++]);
+  }
+
+  saveState();
+}
+
+// ═══════════════════════════════════════════════════
+// TILE DISPLAY
+// ═══════════════════════════════════════════════════
+function refreshTile(tile) {
+  const cluster     = JSON.parse(tile.dataset.cluster);
+  const cat         = tile.dataset.category;
+  const n           = cluster.length;
+  const displayName = tile.dataset.displayName;
+
+  // If the user has assigned a custom name, always show it with count
+  if (displayName) {
+    tile.innerHTML = `<strong>${escHtml(displayName)}</strong> <span class="cluster-count">(${n})</span>`;
+    tile.style.background  = n >= 25 ? catColor(cat) : '';
+    tile.style.borderColor = n >= 25 ? 'rgba(0,0,0,0.12)' : '';
+    tile.style.color       = n >= 25 ? '#1A0D06' : '';
+    if (n >= 25) tile.classList.add('complete');
+    tile.title = cluster.join(', ');
+    return;
+  }
+
+  if (n >= 25) {
+    // No user name yet — show ??? so the user knows it needs naming
+    tile.innerHTML = `<strong>???</strong>`;
+    tile.style.background   = catColor(cat);
+    tile.style.borderColor  = 'rgba(0,0,0,0.12)';
+    tile.style.color        = '#1A0D06';
+    tile.classList.add('complete');
+    tile.draggable          = false;
+    tile.title              = cluster.join(', ');
+  } else if (n >= 3) {
+    tile.innerHTML = `<span style="font-weight:700">${escHtml(cluster.slice(0,2).join(', '))}, <span class="cluster-count">[${n}]</span></span>`;
+    tile.title     = cluster.join('\n');
+  } else if (n === 2) {
+    tile.innerHTML = `<strong>${escHtml(cluster.join('; '))}</strong>`;
+    tile.title     = '';
+  } else {
+    tile.textContent = cluster[0];
+    tile.title       = '';
+  }
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════
+// TILE CREATION
+// ═══════════════════════════════════════════════════
+function makeTile(word, category, cluster) {
+  const tile         = document.createElement('div');
+  tile.className     = 'tile';
+  tile.dataset.word  = word;
+  tile.dataset.category = category;
+  tile.dataset.cluster  = JSON.stringify(cluster || [word]);
+  tile.draggable     = true;
+  refreshTile(tile);
+  attachTileEvents(tile);
+  return tile;
+}
+
+// ═══════════════════════════════════════════════════
+// TILE EVENTS
+// ═══════════════════════════════════════════════════
+function attachTileEvents(tile) {
+  tile.addEventListener('click',     onTileClick);
+  tile.addEventListener('dblclick',  onTileDblClick);
+  tile.addEventListener('dragstart', onDragStart);
+  tile.addEventListener('dragend',   onDragEnd);
+  tile.addEventListener('dragover',  onTileDragOver);
+  tile.addEventListener('dragleave', onTileDragLeave);
+  tile.addEventListener('drop',      onTileDrop);
+}
+
+function onTileClick(e) {
+  e.stopPropagation();
+  const tile = e.currentTarget;
+  if (tile.classList.contains('complete')) return;
+  if (tile.dataset.renaming) return;
+
+  if (!selectedTile) {
+    selectedTile = tile;
+    tile.classList.add('selected');
+  } else if (selectedTile === tile) {
+    tile.classList.remove('selected');
+    selectedTile = null;
+  } else {
+    const first  = selectedTile;
+    const second = tile;
+    first.classList.remove('selected');
+    selectedTile = null;
+    doMatch(first, second);
+  }
+}
+
+function onTileDblClick(e) {
+  e.stopPropagation();
+  const tile = e.currentTarget;
+  // Rename only when tile is sitting in a bar slot
+  if (tile.parentElement?.classList.contains('bar-slot')) startRename(tile);
+}
+
+function onDragStart(e) {
+  const tile = e.currentTarget;
+  if (tile.classList.contains('complete')) { e.preventDefault(); return; }
+  draggingTile = tile;
+  tile.classList.add('dragging-source');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', tile.dataset.word); // required in Firefox
+  // Clear any selection
+  if (selectedTile && selectedTile !== tile) {
+    selectedTile.classList.remove('selected');
+    selectedTile = null;
+  }
+}
+
+function onDragEnd() {
+  if (draggingTile) {
+    draggingTile.classList.remove('dragging-source');
+    draggingTile = null;
+  }
+  document.querySelectorAll('.drag-over-tile').forEach(el => el.classList.remove('drag-over-tile'));
+  document.querySelectorAll('.drag-over-empty').forEach(el => el.classList.remove('drag-over-empty'));
+}
+
+function onTileDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation(); // prevent slot's handler from also firing
+  if (e.currentTarget === draggingTile) return;
+  e.currentTarget.classList.add('drag-over-tile');
+}
+
+function onTileDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over-tile');
+}
+
+function onTileDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const target = e.currentTarget;
+  target.classList.remove('drag-over-tile');
+  if (!draggingTile || draggingTile === target) { onDragEnd(); return; }
+  const src = draggingTile;
+  onDragEnd();
+  doMatch(src, target);
+}
+
+// ═══════════════════════════════════════════════════
+// SLOT EVENTS  (grid cells + bar slots)
+// ═══════════════════════════════════════════════════
+function attachSlotEvents(slot) {
+  slot.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (slot.querySelector('.tile:not(.dragging-source)')) return; // occupied tile handles it
+    slot.classList.add('drag-over-empty');
+  });
+
+  slot.addEventListener('dragleave', e => {
+    if (!slot.contains(e.relatedTarget)) slot.classList.remove('drag-over-empty');
+  });
+
+  slot.addEventListener('drop', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    slot.classList.remove('drag-over-empty');
+    if (!draggingTile) return;
+
+    const occupant = slot.querySelector('.tile:not(.dragging-source)');
+    if (occupant) {
+      // Slot has a different tile — do match
+      const src = draggingTile;
+      onDragEnd();
+      doMatch(src, occupant);
+    } else {
+      // Empty slot — move tile here
+      const src = draggingTile;
+      onDragEnd();
+      slot.appendChild(src);
+      saveState();
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// MATCH LOGIC
+// ═══════════════════════════════════════════════════
+//   tileA = source (dragged or first-clicked)  → removed on match
+//   tileB = target (drop-onto or second-clicked) → keeps merged cluster
+function doMatch(tileA, tileB) {
+  if (!tileA || !tileB || tileA === tileB) return;
+
+  if (tileA.dataset.category === tileB.dataset.category) {
+    const merged = [
+      ...JSON.parse(tileB.dataset.cluster),
+      ...JSON.parse(tileA.dataset.cluster)
+    ];
+    tileB.dataset.cluster = JSON.stringify(merged);
+    refreshTile(tileB);
+    tileA.remove(); // leave parent slot/cell empty
+
+    score++;
+    document.getElementById('score-val').textContent = score;
+    saveState();
+    if (score >= WIN_SCORE) setTimeout(celebrate, 400);
+
+  } else {
+    mistakes++;
+    document.getElementById('mistakes-val').textContent = mistakes;
+    [tileA, tileB].forEach(t => {
+      t.classList.remove('selected');
+      t.classList.add('shake');
+      t.addEventListener('animationend', () => t.classList.remove('shake'), { once: true });
+    });
+    saveState();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// RENAME  (bar tiles, double-click)
+// ═══════════════════════════════════════════════════
+function startRename(tile) {
+  if (tile.dataset.renaming) return;
+  tile.dataset.renaming = '1';
+
+  const prev  = tile.dataset.displayName || '';
+  const input = document.createElement('input');
+  input.className   = 'rename-input';
+  input.value       = prev;
+  input.placeholder = '???';
+  tile.appendChild(input);
+  input.focus();
+  input.select();
+
+  const finish = () => {
+    if (!tile.dataset.renaming) return;
+    delete tile.dataset.renaming;
+    const val = input.value.trim() || prev;
+    tile.dataset.displayName = val;
+    input.remove();
+    refreshTile(tile);
+    saveState();
+  };
+
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  input.blur();
+    if (e.key === 'Escape') { input.value = prev; input.blur(); }
+    e.stopPropagation();
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// WIN
+// ═══════════════════════════════════════════════════
+function celebrate() {
+  alert('🎉 You win! All 25 categories complete!');
+  document.getElementById('fireworks').style.display = 'block';
+  startFireworks();
+}
+
+// ═══════════════════════════════════════════════════
+// BOARD SETUP
+// ═══════════════════════════════════════════════════
+function buildBoard() {
+  // 25×25 grid
+  const grid = document.getElementById('main-grid');
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const cell       = document.createElement('div');
+      cell.className   = 'grid-cell';
+      cell.dataset.r   = r;
+      cell.dataset.c   = c;
+      attachSlotEvents(cell);
+      grid.appendChild(cell);
+    }
+  }
+
+  // Top bar
+  const topBar = document.getElementById('top-bar');
+  for (let i = 0; i < TOP_SLOTS; i++) {
+    const slot         = document.createElement('div');
+    slot.className     = 'bar-slot';
+    slot.dataset.barId = `t${i}`;
+    const hint         = document.createElement('div');
+    hint.className     = 'bar-hint';
+    hint.textContent   = 'drag here';
+    slot.appendChild(hint);
+    attachSlotEvents(slot);
+    topBar.appendChild(slot);
+  }
+
+  // Left bar
+  const leftBar = document.getElementById('left-bar');
+  for (let i = 0; i < LEFT_SLOTS; i++) {
+    const slot         = document.createElement('div');
+    slot.className     = 'bar-slot';
+    slot.dataset.barId = `l${i}`;
+    const hint         = document.createElement('div');
+    hint.className     = 'bar-hint';
+    hint.textContent   = 'drag here';
+    slot.appendChild(hint);
+    attachSlotEvents(slot);
+    leftBar.appendChild(slot);
+  }
+}
+
+function populateBoard() {
+  shuffle(wordlist);
+  const cells = [...document.querySelectorAll('.grid-cell')];
+  wordlist.forEach((item, i) => {
+    cells[i].appendChild(makeTile(item.word, item.category, [item.word]));
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// SAVE / LOAD  (localStorage)
+// ═══════════════════════════════════════════════════
+function saveTileData(tile) {
+  return {
+    word:        tile.dataset.word,
+    category:    tile.dataset.category,
+    cluster:     tile.dataset.cluster,
+    displayName: tile.dataset.displayName || null
+  };
+}
+
+function restoreTile(data) {
+  const tile = makeTile(data.word, data.category, JSON.parse(data.cluster));
+  if (data.displayName) tile.dataset.displayName = data.displayName;
+  return tile;
+}
+
+function saveState() {
+  const gridData = [...document.querySelectorAll('.grid-cell')].map(cell => {
+    const t = cell.querySelector('.tile');
+    return t ? { r: cell.dataset.r, c: cell.dataset.c, ...saveTileData(t) } : null;
+  });
+
+  const barData = [...document.querySelectorAll('.bar-slot')].map(slot => {
+    const t = slot.querySelector('.tile');
+    return t ? { id: slot.dataset.barId, ...saveTileData(t) } : null;
+  });
+
+  localStorage.setItem(LS + 'score',    score);
+  localStorage.setItem(LS + 'mistakes', mistakes);
+  localStorage.setItem(LS + 'grid',     JSON.stringify(gridData));
+  localStorage.setItem(LS + 'bar',      JSON.stringify(barData));
+}
+
+function loadState() {
+  const savedScore = localStorage.getItem(LS + 'score');
+  if (savedScore === null) { populateBoard(); return; }
+
+  score    = parseInt(savedScore)                              || 0;
+  mistakes = parseInt(localStorage.getItem(LS + 'mistakes'))  || 0;
+  document.getElementById('score-val').textContent    = score;
+  document.getElementById('mistakes-val').textContent = mistakes;
+
+  // Grid
+  const gridData  = JSON.parse(localStorage.getItem(LS + 'grid')  || '[]');
+  const gridCells = [...document.querySelectorAll('.grid-cell')];
+  gridCells.forEach((cell, i) => {
+    const d = gridData[i];
+    if (d) cell.appendChild(restoreTile(d));
+  });
+
+  // Bars
+  const barData  = JSON.parse(localStorage.getItem(LS + 'bar')  || '[]');
+  const barSlots = [...document.querySelectorAll('.bar-slot')];
+  barSlots.forEach((slot, i) => {
+    const d = barData[i];
+    if (d) slot.appendChild(restoreTile(d));
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// FIREWORKS
+// ═══════════════════════════════════════════════════
+function startFireworks() {
+  const canvas = document.getElementById('fireworks');
+  const ctx    = canvas.getContext('2d');
+  let w, h;
+  const rockets   = [];
+  const particles = [];
+
+  function resize() { w = canvas.width = innerWidth; h = canvas.height = innerHeight; }
+  window.addEventListener('resize', resize);
+  resize();
+
+  class Rocket {
+    constructor() {
+      this.x     = Math.random() * w;
+      this.y     = h;
+      this.tx    = Math.random() * w;
+      this.ty    = h * 0.08 + Math.random() * h * 0.42;
+      this.color = `hsl(${Math.random()*360},100%,60%)`;
+      const ang  = Math.atan2(this.ty - this.y, this.tx - this.x);
+      const spd  = 3 + Math.random() * 2.5;
+      this.vx    = Math.cos(ang) * spd;
+      this.vy    = Math.sin(ang) * spd;
+      this.done  = false;
+    }
+    update() {
+      this.x += this.vx; this.y += this.vy;
+      if (this.y <= this.ty) { this.explode(); this.done = true; }
+    }
+    explode() {
+      for (let i = 0; i < 65; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = Math.random() * 4.5;
+        particles.push({ x: this.x, y: this.y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, color: this.color, alpha: 1 });
+      }
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 2.5, 0, Math.PI*2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+    }
+  }
+
+  function loop() {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'lighter';
+
+    if (Math.random() < 0.045) rockets.push(new Rocket());
+
+    for (let i = rockets.length - 1; i >= 0; i--) {
+      rockets[i].update(); rockets[i].draw();
+      if (rockets[i].done) rockets.splice(i, 1);
+    }
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.055; p.alpha -= 0.011;
+      if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// ═══════════════════════════════════════════════════
+// GLOBAL CLICK  (deselect when clicking empty space)
+// ═══════════════════════════════════════════════════
+document.getElementById('app').addEventListener('click', e => {
+  if (!e.target.closest('.tile')) deselectAll();
+});
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+buildBoard();
+loadState();
+initTheme();
+</script>
+</body>
+</html>
